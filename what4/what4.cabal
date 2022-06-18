@@ -16,7 +16,7 @@ Description:
   What4 is a generic library for representing values as symbolic formulae which may
   contain references to symbolic values, representing unknown variables.
   It provides support for communicating with a variety of SAT and SMT solvers,
-  including Z3, CVC4, Yices, Boolector, STP, and dReal.
+  including Z3, CVC4, CVC5, Yices, Boolector, STP, and dReal.
 
   The data representation types make heavy use of GADT-style type indices
   to ensure type-correct manipulation of symbolic values.
@@ -179,6 +179,7 @@ library
     What4.Solver.Adapter
     What4.Solver.Boolector
     What4.Solver.CVC4
+    What4.Solver.CVC5
     What4.Solver.DReal
     What4.Solver.ExternalABC
     What4.Solver.STP
@@ -227,8 +228,26 @@ library
   if impl(ghc >= 8.6)
     default-extensions: NoStarIsType
 
-executable quickstart
-  main-is: doc/QuickStart.hs
+executable quickstartcvc4
+  main-is: doc/QuickStartCvc4.hs
+  default-language: Haskell2010
+
+  build-depends:
+    base,
+    parameterized-utils,
+    what4
+
+executable quickstartcvc5
+  main-is: doc/QuickStartCvc5.hs
+  default-language: Haskell2010
+
+  build-depends:
+    base,
+    parameterized-utils,
+    what4
+
+executable quickstartz3
+  main-is: doc/QuickStartZ3.hs
   default-language: Haskell2010
 
   build-depends:

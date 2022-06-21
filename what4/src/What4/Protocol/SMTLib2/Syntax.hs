@@ -49,6 +49,7 @@ module What4.Protocol.SMTLib2.Syntax
   , assertNamed
   , getUnsatAssumptions
   , getUnsatCore
+  , getAbduct
     -- * Logic
   , Logic(..)
   , qf_bv
@@ -183,7 +184,7 @@ qf_bv = Logic "QF_BV"
 
 -- | Set the logic to all supported logics.
 allSupported :: Logic
-allSupported = Logic "ALL_SUPPORTED"
+allSupported = Logic "ALL"
 
 ------------------------------------------------------------------------
 -- Symbol
@@ -290,7 +291,7 @@ or [] = true
 or [x] = x
 or l = term_app "or" l
 
--- | Disjunction of all terms
+-- | Xor of all terms
 xor :: [Term] -> Term
 xor l@(_:_:_) = term_app "xor" l
 xor _ = error "xor expects two or more arguments."
@@ -299,7 +300,7 @@ xor _ = error "xor expects two or more arguments."
 eq :: [Term] -> Term
 eq = chain_app "="
 
--- | Construct a chainable term with the givne relation
+-- | Construct a chainable term with the given relation
 --
 -- @pairwise_app p [x1, x2, ..., xn]@ is equivalent to
 -- \forall_{i,j} p x_i x_j@.
@@ -819,6 +820,9 @@ getUnsatAssumptions = Cmd "(get-unsat-assumptions)"
 
 getUnsatCore :: Command
 getUnsatCore = Cmd "(get-unsat-core)"
+
+getAbduct :: Text -> Term -> Command
+getAbduct nm p = Cmd $ "(get-abduct " <> Builder.fromText nm <> " (" <> renderTerm p <> "))"
 
 -- | Get the values associated with the terms from the last call to @check-sat@.
 getValue :: [Term] -> Command

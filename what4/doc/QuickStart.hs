@@ -2,7 +2,7 @@
 module Main where
 
 import Data.Foldable (forM_)
-import System.IO (FilePath)
+import System.IO (FilePath, IOMode(..), openFile)
 
 import Data.Parameterized.Nonce (newIONonceGenerator)
 import Data.Parameterized.Some (Some(..))
@@ -17,7 +17,7 @@ import What4.Interface
          , freshConstant, safeSymbol
          , notPred, orPred, andPred )
 import What4.Solver
-         (defaultLogData, z3Options, withZ3, SatResult(..))
+         (LogData(..), defaultLogData, z3Options, withZ3, SatResult(..))
 import What4.Protocol.SMTLib2
          (assume, sessionWriter, runCheckSat)
 
@@ -82,7 +82,9 @@ checkModel ::
   IO ()
 checkModel sym f es = do
   -- We will use z3 to determine if f is satisfiable.
-  withZ3 sym z3executable defaultLogData $ \session -> do
+  mirroredOutput <- openFile "/tmp/quickstart.smt" WriteMode
+  let logData = defaultLogData { logHandle = Just mirroredOutput }
+  withZ3 sym z3executable logData $ \session -> do
     -- Assume f is true.
     assume (sessionWriter session) f
     runCheckSat session $ \result ->

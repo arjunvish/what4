@@ -38,7 +38,9 @@ module What4.Protocol.SMTLib2
   , writeCheckSat
   , writeExit
   , writeGetValue
+  , writeGetAbduct
   , runCheckSat
+  , runGetAbduct
   , asSMT2Type
   , setOption
   , getVersion
@@ -755,6 +757,9 @@ setProduceModels w b = addCommand w $ SMT2.setProduceModels b
 writeGetValue :: SMTLib2Tweaks a => WriterConn t (Writer a) -> [Term] -> IO ()
 writeGetValue w l = addCommandNoAck w $ SMT2.getValue l
 
+writeGetAbduct :: SMTLib2Tweaks a => WriterConn t (Writer a) -> Text -> Term -> IO ()
+writeGetAbduct w nm p = addCommandNoAck w $ SMT2.getAbduct nm p
+
 parseBoolSolverValue :: MonadFail m => SExp -> m Bool
 parseBoolSolverValue (SAtom "true")  = return True
 parseBoolSolverValue (SAtom "false") = return False
@@ -890,6 +895,19 @@ runGetValue s e = do
         AckSuccessSExp (SApp [SApp [_, b]]) -> Just b
         _ -> Nothing
   getLimitedSolverResponse "get value" valRsp (sessionWriter s) (SMT2.getValue [e])
+
+runGetAbduct :: SMTLib2Tweaks a
+             => Session t a
+             -> String
+             -> Term
+             -> IO SExp
+runGetAbduct s nm p = do
+  let nm_t = Text.pack nm
+  writeGetAbduct (sessionWriter s) nm_t p
+  let valRsp = \case
+        AckSuccessSExp (SApp [SApp [_, b]]) -> Just b
+        _ -> Nothing
+  getLimitedSolverResponse "get abduct" valRsp (sessionWriter s) (SMT2.getAbduct nm_t p)
 
 -- | This function runs a check sat command
 runCheckSat :: forall b t a.

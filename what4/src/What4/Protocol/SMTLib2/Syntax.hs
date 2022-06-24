@@ -822,7 +822,7 @@ getUnsatCore :: Command
 getUnsatCore = Cmd "(get-unsat-core)"
 
 getAbduct :: Text -> Term -> Command
-getAbduct nm p = Cmd $ "(get-abduct " <> Builder.fromText nm <> " (" <> renderTerm p <> "))"
+getAbduct nm p = Cmd $ "(get-abduct " <> Builder.fromText nm <> " " <> renderTerm p <> ")"
 
 -- | Get the values associated with the terms from the last call to @check-sat@.
 getValue :: [Term] -> Command

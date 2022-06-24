@@ -199,6 +199,8 @@ instance SMT2.SMTLib2GenericSolver CVC4 where
     SMT2.setLogic writer SMT2.allSupported
     -- Tell CVC4 to produce models
     SMT2.setProduceModels writer True
+    -- Tell CVC4 to produce abducts
+    SMT2.setOption writer "produce-abducts" "true"
 
 runCVC4InOverride
   :: ExprBuilder t st fs
@@ -233,6 +235,8 @@ setInteractiveLogicAndOptions writer = do
     SMT2.setOption writer "produce-models" "true"
     -- Tell CVC4 to make declarations global, so they are not removed by 'pop' commands
     SMT2.setOption writer "global-declarations" "true"
+    -- Tell CVC4 to produce abducts
+    SMT2.setOption writer "produce-abducts" "true"
     -- Tell CVC4 to compute UNSAT cores, if that feature is enabled
     when (supportedFeatures writer `hasProblemFeature` useUnsatCores) $ do
       SMT2.setOption writer "produce-unsat-cores" "true"

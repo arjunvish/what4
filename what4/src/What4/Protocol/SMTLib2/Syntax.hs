@@ -50,6 +50,7 @@ module What4.Protocol.SMTLib2.Syntax
   , getUnsatAssumptions
   , getUnsatCore
   , getAbduct
+  , getAbductNext
     -- * Logic
   , Logic(..)
   , qf_bv
@@ -823,6 +824,9 @@ getUnsatCore = Cmd "(get-unsat-core)"
 
 getAbduct :: Text -> Term -> Command
 getAbduct nm p = Cmd $ "(get-abduct " <> Builder.fromText nm <> " " <> renderTerm p <> ")"
+
+getAbductNext :: Command
+getAbductNext = Cmd "(get-abduct-next)"
 
 -- | Get the values associated with the terms from the last call to @check-sat@.
 getValue :: [Term] -> Command

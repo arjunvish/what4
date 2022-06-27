@@ -35,6 +35,9 @@ main = do
   Some ng <- newIONonceGenerator
   sym <- newExprBuilder FloatIEEERepr EmptyExprBuilderState ng
 
+  -- This line is necessary for working with z3.
+  extendConfig cvc4Options (getConfiguration sym)
+
   -- The following is satisfiable. Let's get an abduct from the SMT solver,
   -- Some formula that will make it unsatisfiable (its negation provable)
   -- not (y >= 0 => (x + y + z) >= 0)
@@ -52,57 +55,53 @@ main = do
   xyzgte0 <- intLe sym zero pxyz          -- 0 <= (x + y + z) 
   f <- impliesPred sym ygte0 xyzgte0      -- (0 <= y) -> (0 <= (x + y + z))
 
-  -- Determine if ~f is satisfiable, and print the instance if one is found.
-  {-
-  notf <- notPred sym f
-  call1 <- checkModel sym notf [ ("x", x)
-                               , ("y", y)
-                               , ("z", z)
-                               ]
-  -}
+  -- Prove f (is ~f unsatisfiable?), and otherwise, print countermodel and a formula that will allow me to prove f
+  prove sym f [ ("x", x)
+              , ("y", y)
+              , ("z", z)
+              ]
 
   -- Get me a formula that will allow me to prove f
-  testGetAbduct sym f [ ("x", x)
+  {-testGetAbduct sym f [ ("x", x)
                       , ("y", y)
                       , ("z", z)
-                      ]
+                      ]-}
 
 testGetAbduct :: 
   ExprBuilder t st fs ->
   BoolExpr t ->
   [(String, IntegerExpr t)] ->
+  Int ->
   IO ()
-testGetAbduct sym f es = do
-  putStrLn "testGetAbduct1:"
+testGetAbduct sym f es n = do
   mirroredOutput <- openFile "/tmp/what4abduct.smt2" ReadWriteMode
   let logData = LogData { logCallbackVerbose = \_ _ -> return ()
                          , logVerbosity = 2
                          , logReason = "defaultReason"
                          , logHandle = Just mirroredOutput }
   withCVC4 sym cvc4executable logData $ \session -> do
-    putStrLn "testGetAbduct2:"
     f_term <- mkSMTTerm (sessionWriter session) f
-    abd <- runGetAbduct session "abd" f_term
-    putStrLn "testGetAbduct3:"
-    print abd
+    abd <- runGetAbduct session "abd" f_term n
+    forM_ abd putStrLn
 
 -- | Determine whether a predicate is satisfiable, and print out the values of a
 -- set of expressions if a satisfying instance is found.
-{-checkModel ::
+prove ::
   ExprBuilder t st fs ->
   BoolExpr t ->
   [(String, IntegerExpr t)] ->
   IO ()
-checkModel sym f es = do
+prove sym f es = do
   -- We will use z3 to determine if f is satisfiable.
-  mirroredOutput <- openFile "/tmp/quickstart.smt2" ReadWriteMode
+  mirroredOutput <- openFile "/tmp/what4abductprove.smt2" ReadWriteMode
   let logData = LogData { logCallbackVerbose = \_ _ -> return ()
                          , logVerbosity = 2
                          , logReason = "defaultReason"
                          , logHandle = Just mirroredOutput }
-  withZ3 sym z3executable logData $ \session -> do
+  notf <- notPred sym f
+  withCVC4 sym cvc4executable logData $ \session -> do
     -- Assume f is true.
-    assume (sessionWriter session) f
+    assume (sessionWriter session) notf
     runCheckSat session $
       \case
         Sat (ge, _) -> do
@@ -110,6 +109,8 @@ checkModel sym f es = do
           forM_ es $ \(nm, e) -> do
             v <- groundEval ge e
             putStrLn $ "  " ++ nm ++ " := " ++ show v
+          putStrLn "\nEach of the following formulas would make the goal unsatisfiable:"
+          testGetAbduct sym f es 5
         Unsat _ -> putStrLn "Unsatisfiable."
         Unknown -> putStrLn "Solver failed to find a solution."
-    putStrLn ""-}
+    putStrLn ""

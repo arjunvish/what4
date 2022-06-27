@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 module Main where
 
 import Data.Foldable (forM_)
@@ -85,8 +86,8 @@ checkModel sym f es = do
   withZ3 sym z3executable defaultLogData $ \session -> do
     -- Assume f is true.
     assume (sessionWriter session) f
-    runCheckSat session $ \result ->
-      case result of
+    runCheckSat session $ 
+      \case
         Sat (ge, _) -> do
           putStrLn "Satisfiable, with model:"
           forM_ es $ \(nm, e) -> do
@@ -94,3 +95,4 @@ checkModel sym f es = do
             putStrLn $ "  " ++ nm ++ " := " ++ show v
         Unsat _ -> putStrLn "Unsatisfiable."
         Unknown -> putStrLn "Solver failed to find a solution."
+    putStrLn ""
